@@ -2,6 +2,7 @@ package auth
 
 import (
 	"authService/internal/domain/models"
+	"authService/internal/lib/jwt"
 	"authService/internal/storage"
 	"context"
 	"errors"
@@ -79,8 +80,13 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 	if err != nil {
 		return "", fmt.Errorf("%s, %w", op, err)
 	}
-	log.Info("user logged in")
-	return app.Token, nil
+	log.Info("user logged in successfully")
+	token, err := jwt.NewToken(user, app, a.TokenTTL)
+	if err != nil {
+		a.log.Error("failed to create token")
+		return "", fmt.Errorf("%s, %w", op, err)
+	}
+	return token, nil
 }
 func (a *Auth) RegisterNewUser(ctx context.Context, email string, password string) (int64, error) {
 	const op = "auth.RegisterNewUser"
