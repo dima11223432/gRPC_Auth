@@ -2,8 +2,9 @@ package auth
 
 import (
 	"authService/internal/domain/models"
+	"authService/internal/storage"
 	"context"
-	"crypto"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -18,6 +19,10 @@ type Auth struct {
 	appProvider  AppProvider
 	TokenTTL     time.Duration
 }
+
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
+)
 
 type UserSaver interface {
 	SaveUser(ctx context.Context, email string, PassHash []byte) (uid int64, err error)
@@ -50,7 +55,32 @@ func New(
 }
 
 func (a *Auth) Login(ctx context.Context, email string, password string, appID int) (string, error) {
-	panic("implement me")
+	const op = "auth.Login"
+
+	log := a.log.With(
+		slog.String("op", op),
+		slog.String("email", email),
+	)
+	log.Info("attempting to login User")
+
+	user, err := a.userProvider.User(ctx, email)
+	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			a.log.Warn("user not found")
+			return "", fmt.Errorf("%s, %w", op, ErrInvalidCredentials)
+		}
+	}
+	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
+		a.log.Info("invalid credentials")
+		return "", fmt.Errorf("%s %w", op, ErrInvalidCredentials)
+	}
+
+	app, err := a.appProvider.App(ctx, int64(appID))
+	if err != nil {
+		return "", fmt.Errorf("%s, %w", op, err)
+	}
+	log.Info("user logged in")
+	return app.Token, nil
 }
 func (a *Auth) RegisterNewUser(ctx context.Context, email string, password string) (int64, error) {
 	const op = "auth.RegisterNewUser"

@@ -2,6 +2,6 @@ package models
 
 type User struct {
 	ID       int
-	email    string
+	Email    string
 	PassHash []byte
 }
