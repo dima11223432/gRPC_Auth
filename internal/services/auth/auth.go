@@ -3,8 +3,12 @@ package auth
 import (
 	"authService/internal/domain/models"
 	"context"
+	"crypto"
+	"fmt"
 	"log/slog"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Auth struct {
@@ -50,6 +54,27 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 }
 func (a *Auth) RegisterNewUser(ctx context.Context, email string, password string) (int64, error) {
 	const op = "auth.RegisterNewUser"
+
+	log := a.log.With(
+		slog.String("op", op),
+		slog.String("email", email),
+	)
+
+	log.Info("register new user")
+
+	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Error("failed to generate Hash")
+		return 0, fmt.Errorf("%s, %w", op, err)
+	}
+
+	id, err := a.userSaver.SaveUser(ctx, email, passHash)
+	if err != nil {
+		log.Error("failed to save user")
+		return 0, fmt.Errorf("%s, %w", op, err)
+	}
+	log.Info("user have just registered!")
+	return id, nil
 }
 func (a *Auth) IsAdmin(ctx context.Context, UserID int) (bool, error) {
 	panic("implement me")
