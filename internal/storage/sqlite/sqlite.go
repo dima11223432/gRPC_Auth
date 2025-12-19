@@ -74,7 +74,7 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 	const op = "storage.sqlite.IsAdmin"
 
-	stmt, err := s.db.Prepare("SELECT admin FROM users WHERE id = ?")
+	stmt, err := s.db.Prepare("SELECT id_admin FROM users WHERE id = ?")
 	if err != nil {
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
