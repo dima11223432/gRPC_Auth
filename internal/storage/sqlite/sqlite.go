@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"authService/internal/domain/models"
 	"authService/internal/storage"
 	"context"
 	"database/sql"
@@ -15,6 +16,7 @@ type Storage struct {
 	db *sql.DB
 }
 
+// NOTE:
 // New creates a new instance of the Storage
 func New(storagePath string) (*Storage, error) {
 	const op = "storage.sqlite.New"
@@ -48,4 +50,23 @@ func (s *Storage) SaveUser(ctx context.Context, email string, Passhash []byte) (
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 	return id, nil
+}
+
+func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
+	const op = "storage.sqlite.User"
+
+	stmt, err := s.db.Prepare("SELECT * FROM users WHERE email = ?")
+	if err != nil {
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	row := stmt.QueryRowContext(ctx, email)
+	var user models.User
+	if err := row.Scan(&user.ID, &user.Email, &user.PassHash); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.User{}, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
+		}
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+	return user, nil
 }
