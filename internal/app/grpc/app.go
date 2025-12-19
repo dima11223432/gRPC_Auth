@@ -1,7 +1,7 @@
 package grpcApp
 
 import (
-	grpcAuth "authService/internal/grpc/auth"
+	grpcauth "authService/internal/grpc/auth"
 	"fmt"
 	"log/slog"
 	"net"
@@ -15,9 +15,9 @@ type App struct {
 	port       int
 }
 
-func New(log *slog.Logger, port int) *App {
+func New(log *slog.Logger, authService grpcauth.Auth, port int) *App {
 	gRPCServer := grpc.NewServer()
-	grpcAuth.Register(gRPCServer)
+	grpcauth.Register(gRPCServer, authService)
 
 	return &App{
 		log:        log,
