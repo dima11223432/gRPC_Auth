@@ -1,4 +1,4 @@
-package auth
+package grpcauth
 
 import (
 	"authService/internal/services/auth"
@@ -13,8 +13,8 @@ import (
 )
 
 type Auth interface {
-	Login(email string, password string, appId int) (token string, err error)
-	RegisterNewUser(ctx context.Context, email string, password string) (UserId int, err error)
+	Login(ctx context.Context, email string, password string, appId int) (token string, err error)
+	RegisterNewUser(ctx context.Context, email string, password string) (UserId int64, err error)
 	IsAdmin(ctx context.Context, UserId int) (bool, error)
 }
 
@@ -38,7 +38,7 @@ func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.
 		return nil, err
 	}
 
-	token, err := s.auth.Login(req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
+	token, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 
