@@ -25,7 +25,7 @@ func main() {
 	}
 	m, err := migrate.New(
 		"file://"+migrationPath,
-		fmt.Sprintf("sqlite3://%s?x-migration-table=%s", storagePath, migrationTable),
+		fmt.Sprintf("sqlite3://%s?x-migrations-table=%s", storagePath, migrationTable),
 	)
 	if err != nil {
 		panic(err)

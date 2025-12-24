@@ -72,6 +72,8 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 			a.log.Warn("user not found")
 			return "", fmt.Errorf("%s, %w", op, ErrInvalidCredentials)
 		}
+		a.log.Error("failed to get user")
+		return "", fmt.Errorf("%s, %w", op, err)
 	}
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		a.log.Info("invalid credentials")
@@ -98,24 +100,25 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password strin
 		slog.String("email", email),
 	)
 
-	log.Info("register new user")
+	log.Info("attempting to register new user")
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Error("failed to generate Hash")
-		return 0, fmt.Errorf("%s, %w", op, err)
+		log.Error("failed to generate password hash")
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	id, err := a.userSaver.SaveUser(ctx, email, passHash)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
-
-			return 0, fmt.Errorf("%s, %w", op, ErrUserExists)
+			log.Warn("user already exists")
+			return 0, fmt.Errorf("%s: %w", op, ErrUserExists)
 		}
-		log.Error("failed to save user")
-		return 0, fmt.Errorf("%s, %w", op, err)
+		log.Error("failed to save user", slog.String("error", err.Error()))
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
-	log.Info("user have just registered!")
+
+	log.Info("user registered successfully", slog.Int64("user_id", id))
 	return id, nil
 }
 func (a *Auth) IsAdmin(ctx context.Context, UserID int) (bool, error) {
