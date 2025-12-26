@@ -88,25 +88,29 @@ func TestRegisterLogin_FailedCases(t *testing.T) {
 		name        string
 		email       string
 		password    string
+		appId       int
 		expectedErr string
 	}{
 		{
 			name:        "Register with empty password",
 			email:       gofakeit.Email(),
 			password:    "",
+			appId:       defaultAppId,
 			expectedErr: "password is empty",
 		},
 		{
 			name:        "Register with empty email",
 			email:       "",
 			password:    randomFakePassword(),
+			appId:       defaultAppId,
 			expectedErr: "email is empty",
 		},
 		{
 			name:        "Register with both empty fields",
 			email:       "",
 			password:    "",
-			expectedErr: "password is empty",
+			appId:       defaultAppId,
+			expectedErr: "email is empty",
 		},
 	}
 	for _, tc := range testCases {
